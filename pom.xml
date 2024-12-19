@@ -13,7 +13,11 @@
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonar.projectKey>gestion-bibliotheque</sonar.projectKey>
+        <sonar.host.url>http://localhost:9000</sonar.host.url>
+
     </properties>
+
+
 
     <dependencies>
         <!-- MySQL -->
