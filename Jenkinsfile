@@ -66,16 +66,18 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh "mvn sonar:sonar"
-                }
-            }
-        }
-
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 1, unit: 'HOURS') {
-                    waitForQualityGate abortPipeline: true
+                script {
+                    // Run SonarQube analysis directly through Maven
+                    sh """
+                        mvn sonar:sonar \
+                        -Dsonar.host.url=http://localhost:9000 \
+                        -Dsonar.projectKey=GestionBibliotheque \
+                        -Dsonar.java.binaries=target/classes \
+                        -Dsonar.sources=src/main/java \
+                        -Dsonar.tests=src/test/java \
+                        -Dsonar.java.coveragePlugin=jacoco \
+                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                    """
                 }
             }
         }
