@@ -66,17 +66,12 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                script {
-                    // Run SonarQube analysis directly through Maven
+                withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
                     sh """
                         mvn sonar:sonar \
                         -Dsonar.host.url=http://localhost:9000 \
-                        -Dsonar.projectKey=GestionBibliotheque \
-                        -Dsonar.java.binaries=target/classes \
-                        -Dsonar.sources=src/main/java \
-                        -Dsonar.tests=src/test/java \
-                        -Dsonar.java.coveragePlugin=jacoco \
-                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                        -Dsonar.login=${SONAR_TOKEN} \
+                        -Dsonar.projectKey=GestionBibliotheque
                     """
                 }
             }
