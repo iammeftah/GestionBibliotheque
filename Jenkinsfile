@@ -1,23 +1,20 @@
 pipeline {
     agent any
 
-    environment {
-        MAVEN_HOME = tool 'Maven'
-        JAVA_HOME = tool 'JDK17'
+    tools {
+        maven 'Maven'
+        jdk 'JDK17'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Clean workspace before checkout
                 cleanWs()
-
-                // Git checkout for public repository
                 checkout([
                     $class: 'GitSCM',
-                    branches: [[name: '*/main']], // Specify your branch here
+                    branches: [[name: '*/main']],
                     userRemoteConfigs: [[
-                        url: 'https://github.com/iammeftah/GestionBibliotheque'  // Replace with your public repo URL
+                        url: 'https://github.com/iammeftah/GestionBibliotheque'
                     ]],
                     extensions: [
                         [$class: 'CleanBeforeCheckout'],
@@ -29,7 +26,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh "${MAVEN_HOME}/bin/mvn clean compile"
+                sh "mvn clean compile"
             }
         }
 
@@ -37,20 +34,16 @@ pipeline {
             steps {
                 script {
                     try {
-                        // Print Maven and Java version for debugging
-                        sh "${MAVEN_HOME}/bin/mvn -version"
+                        sh "mvn -version"
                         sh "java -version"
-
-                        // Run tests with verbose output
                         sh """
-                            ${MAVEN_HOME}/bin/mvn test \
+                            mvn test \
+                            org.jacoco:jacoco-maven-plugin:prepare-agent \
                             -Dmaven.test.failure.ignore=false \
                             -Dsurefire.useFile=false \
-                            -Dmaven.test.redirectTestOutputToFile=false \
-                            -X
+                            -Dmaven.test.redirectTestOutputToFile=false
                         """
                     } catch (Exception e) {
-                        // Print detailed error information
                         echo "Test stage failed with error: ${e.getMessage()}"
                         echo "Printing surefire reports if they exist:"
                         sh 'find . -name "surefire-reports" -type d -exec ls -la {} \\;'
@@ -61,26 +54,20 @@ pipeline {
             post {
                 always {
                     junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
-                    script {
-                        try {
-                            jacoco(
-                                execPattern: '**/target/jacoco.exec',
-                                classPattern: '**/target/classes',
-                                sourcePattern: '**/src/main/java'
-                            )
-                        } catch (Exception e) {
-                            echo "JaCoCo report generation failed: ${e.getMessage()}"
-                            echo "Continuing pipeline execution..."
-                        }
-                    }
                 }
+            }
+        }
+
+        stage('Generate Coverage Report') {
+            steps {
+                sh "mvn org.jacoco:jacoco-maven-plugin:report"
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh "${MAVEN_HOME}/bin/mvn sonar:sonar"
+                    sh "mvn sonar:sonar"
                 }
             }
         }
@@ -95,15 +82,17 @@ pipeline {
 
         stage('Package') {
             steps {
-                sh "${MAVEN_HOME}/bin/mvn package -DskipTests"
+                sh "mvn package -DskipTests"
             }
         }
 
         stage('Deploy') {
             steps {
                 echo 'Simulation du déploiement...'
-                sh 'mkdir -p target/deploy'
-                sh 'cp target/*.jar target/deploy/'
+                sh '''
+                    mkdir -p target/deploy
+                    cp target/*.jar target/deploy/
+                '''
             }
         }
     }
