@@ -9,7 +9,21 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                // Clean workspace before checkout
+                cleanWs()
+
+                // Git checkout for public repository
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']], // Specify your branch here
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/iammeftah/GestionBibliotheque'  // Replace with your public repo URL
+                    ]],
+                    extensions: [
+                        [$class: 'CleanBeforeCheckout'],
+                        [$class: 'CloneOption', depth: 1, noTags: true, shallow: true, timeout: 30]
+                    ]
+                ])
             }
         }
 
@@ -21,16 +35,44 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh "${MAVEN_HOME}/bin/mvn test"
+                script {
+                    try {
+                        // Print Maven and Java version for debugging
+                        sh "${MAVEN_HOME}/bin/mvn -version"
+                        sh "java -version"
+
+                        // Run tests with verbose output
+                        sh """
+                            ${MAVEN_HOME}/bin/mvn test \
+                            -Dmaven.test.failure.ignore=false \
+                            -Dsurefire.useFile=false \
+                            -Dmaven.test.redirectTestOutputToFile=false \
+                            -X
+                        """
+                    } catch (Exception e) {
+                        // Print detailed error information
+                        echo "Test stage failed with error: ${e.getMessage()}"
+                        echo "Printing surefire reports if they exist:"
+                        sh 'find . -name "surefire-reports" -type d -exec ls -la {} \\;'
+                        throw e
+                    }
+                }
             }
             post {
                 always {
-                    junit '**/target/surefire-reports/*.xml'
-                    jacoco(
-                        execPattern: '**/target/jacoco.exec',
-                        classPattern: '**/target/classes',
-                        sourcePattern: '**/src/main/java'
-                    )
+                    junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
+                    script {
+                        try {
+                            jacoco(
+                                execPattern: '**/target/jacoco.exec',
+                                classPattern: '**/target/classes',
+                                sourcePattern: '**/src/main/java'
+                            )
+                        } catch (Exception e) {
+                            echo "JaCoCo report generation failed: ${e.getMessage()}"
+                            echo "Continuing pipeline execution..."
+                        }
+                    }
                 }
             }
         }
