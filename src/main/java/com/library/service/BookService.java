@@ -21,10 +21,6 @@ public class BookService {
         bookDAO.add(book);
     }
 
-    // Supprimer un livre
-    public void deleteBook(Book book) {
-        bookDAO.delete(book.getId());
-    }
 
 
     // Afficher tous les livres
