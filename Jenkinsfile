@@ -18,8 +18,9 @@ pipeline {
                     ]],
                     extensions: [
                         [$class: 'CleanBeforeCheckout'],
-                        [$class: 'CloneOption', depth: 1, noTags: true, shallow: true, timeout: 30]
-                    ]
+                        [$class: 'CloneOption', depth: 0, noTags: false, shallow: false, timeout: 30]
+                    ],
+                    changelog: true
                 ])
             }
         }
