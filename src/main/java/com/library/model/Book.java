@@ -49,7 +49,10 @@ public class Book {
     }
 
     public void setTitle(String title) {
-        this.title = title;
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("Title cannot be empty");
+        }
+        this.title = title.trim();
     }
 
     public String getAuthor() {
@@ -57,7 +60,10 @@ public class Book {
     }
 
     public void setAuthor(String author) {
-        this.author = author;
+        if (author == null || author.trim().isEmpty()) {
+            throw new IllegalArgumentException("Author cannot be empty");
+        }
+        this.author = author.trim();
     }
 
     public String getPublisher() {
