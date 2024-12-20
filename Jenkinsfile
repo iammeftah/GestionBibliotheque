@@ -96,22 +96,59 @@ pipeline {
     }
 
     post {
-        success {
-            emailext (
-                subject: "Build Réussi: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
-                body: "Le build a réussi. \n\nVoir: ${env.BUILD_URL}",
-                recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-            )
+            success {
+                emailext (
+                    subject: "✅ Build Réussi: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
+                    body: """
+                        Le build du projet Gestion Bibliothèque a réussi!
+
+                        Détails:
+                        - Numéro du build: ${env.BUILD_NUMBER}
+                        - Nom du job: ${env.JOB_NAME}
+                        - Commit: ${env.GIT_COMMIT}
+                        - Branche: ${env.GIT_BRANCH}
+
+                        Rapports:
+                        - Tests: ${env.BUILD_URL}testReport/
+                        - Couverture: ${env.BUILD_URL}coverage/
+                        - SonarQube: http://localhost:9000/dashboard?id=${SONAR_PROJECT_KEY}
+
+                        Voir les détails complets: ${env.BUILD_URL}
+                    """,
+                    to: '${EMAIL_RECIPIENTS}',
+                    recipientProviders: [
+                        [$class: 'DevelopersRecipientProvider'],
+                        [$class: 'RequesterRecipientProvider']
+                    ],
+                    attachLog: true
+                )
+            }
+            failure {
+                emailext (
+                    subject: "❌ Build Échoué: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
+                    body: """
+                        Le build du projet Gestion Bibliothèque a échoué!
+
+                        Détails:
+                        - Numéro du build: ${env.BUILD_NUMBER}
+                        - Nom du job: ${env.JOB_NAME}
+                        - Commit: ${env.GIT_COMMIT}
+                        - Branche: ${env.GIT_BRANCH}
+
+                        Erreur: ${currentBuild.description ?: 'Voir les logs pour plus de détails'}
+
+                        Voir les logs complets: ${env.BUILD_URL}console
+                    """,
+                    to: '${EMAIL_RECIPIENTS}',
+                    recipientProviders: [
+                        [$class: 'DevelopersRecipientProvider'],
+                        [$class: 'RequesterRecipientProvider']
+                    ],
+                    attachLog: true
+                )
+            }
+            always {
+                cleanWs()
+            }
         }
-        failure {
-            emailext (
-                subject: "Build Échoué: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
-                body: "Le build a échoué. \n\nVoir: ${env.BUILD_URL}",
-                recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-            )
-        }
-        always {
-            cleanWs()
-        }
-    }
 }
