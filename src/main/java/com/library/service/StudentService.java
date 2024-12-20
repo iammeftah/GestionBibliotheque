@@ -36,6 +36,11 @@ public class StudentService {
         studentDAO.addStudent(student);
     }
 
+    // Remove student
+    public void removeStudent(Student student) {
+        studentDAO.deleteStudent(student.getId());
+    }
+
     // Afficher tous les étudiants
     public void displayStudents() {
         List<Student> students = studentDAO.getAllStudents();
